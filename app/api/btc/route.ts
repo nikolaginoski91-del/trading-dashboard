@@ -3,15 +3,13 @@ import { getBTCPrice } from '@/lib/dataFetcher';
 import { APIResponse, BTCResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const { data, meta } = await getBTCPrice();
-
     const result: BTCResult = { btc: data, meta };
     const response: APIResponse<BTCResult> = { ok: true, data: result };
-
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': 'no-store',

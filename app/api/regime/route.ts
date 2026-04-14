@@ -4,7 +4,7 @@ import { computeRegime } from '@/lib/regime';
 import { APIResponse, RegimeResult } from '@/lib/types';
 
 export const runtime = 'nodejs';
-export const revalidate = 0;
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
@@ -15,29 +15,17 @@ export async function GET() {
       getOHLC('QQQ', 60),
     ]);
 
-    // Use the oldest timestamp for meta (most conservative)
-    const meta = spyPrice.meta.fetchedAt < qqqPrice.meta.fetchedAt
-      ? spyPrice.meta
-      : qqqPrice.meta;
-
-    // Use stale flag if any source was stale
+    const meta = { ...spyPrice.meta };
     meta.stale = spyPrice.meta.stale || qqqPrice.meta.stale || spyOHLC.meta.stale || qqqOHLC.meta.stale;
 
-    const regime = computeRegime(
-      spyOHLC.data,
-      qqqOHLC.data,
-      spyPrice.data,
-      qqqPrice.data,
-      meta
-    );
-
+    const regime = computeRegime(spyOHLC.data, qqqOHLC.data, spyPrice.data, qqqPrice.data, meta);
     const response: APIResponse<RegimeResult> = { ok: true, data: regime };
 
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': 'no-store',
         'X-Regime': regime.regime,
-        'X-Confidence': String(regime.confidence.toFixed(2)),
+        'X-Confidence': regime.confidence.toFixed(2),
         'X-Data-Stale': String(meta.stale),
       },
     });
